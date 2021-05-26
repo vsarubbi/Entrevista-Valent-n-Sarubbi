@@ -1,0 +1,47 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed May 26 10:23:07 2021
+
+@author: Mandinga
+"""
+
+import pandas as pd
+import numpy as np
+
+#Data load
+df = pd.read_pickle(r'C:\Users\Mandinga\Desktop\Ingenieria\Tests\Test Cliengo\test_data.pkl')
+#Variables initialization
+Davg= pd.DataFrame(np.zeros((24,2)),columns=['Hour','Hourly Values'])
+
+#Functions definitions 
+def clean(df): #Cleans the input
+    df['Timestamps'] = pd.to_datetime(df['Timestamps'], errors='coerce',utc=True)
+    df = df.dropna(subset=['Timestamps'])
+
+#Remove all potential errors in the Timestamp
+clean(df)
+
+#Variables inizialitation for filter by day of the year
+df['Day']=0
+df['Day']=0
+df['Hour']=0
+
+#Timestamps completition, assigns day of the year to the column day
+shape = df.shape
+for x in range(shape[0]):
+        df.iloc[x,2]=df.iloc[x,1].dayofyear
+        df.iloc[x,3]=df.iloc[x,1].hour
+
+###################################
+
+#Data analysis
+
+Max= df.sort_values('Values',ascending=False)
+Max=Max[:1]
+print("Max",Max)
+Min= df.sort_values('Values',ascending=True)
+Min=Min[:1]
+print("Min",Min)
+Mean= df.mean()[0]
+print("Mean",Mean)
+
