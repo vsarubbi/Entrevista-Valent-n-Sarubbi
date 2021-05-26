@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun May 23 17:11:55 2021
+
+@author: Valentín Sarubbi
+"""
+
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import plotly.express as px
+import pandas as pd
+import numpy as np
+from dash.dependencies import Input, Output
+
+#Data load
+df = pd.read_pickle(r'C:\Users\Mandinga\Desktop\Ingenieria\Tests\Test Cliengo\test_data.pkl')
+#Variables initialization
+Davg= pd.DataFrame(np.zeros((24,2)),columns=['Hour','Hourly Values'])
+
+#Functions definitions 
+def clean(df): #Cleans the input
+    df['Timestamps'] = pd.to_datetime(df['Timestamps'], errors='coerce',utc=True)
+    df = df.dropna(subset=['Timestamps'])
+
+
+#Remove all potential errors in the Timestamp
+clean(df)
+
+#Variables inizialitation for filter by day of the year
+df['Day']=0
+df['Day']=0
+df['Hour']=0
+
+#Timestamps completition, assigns day of the year to the column day
+shape = df.shape
+for x in range(shape[0]):
+        df.iloc[x,2]=df.iloc[x,1].dayofyear
+        df.iloc[x,3]=df.iloc[x,1].hour
+
+###################################
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+app.layout = html.Div([
+    html.H6("Cliengo valores por minuto"),
+    dcc.Dropdown(id="slct_day",
+                 options=[
+                     {"label": "24 de Enero", "value": 24},
+                     {"label": "25 de Enero", "value": 25},
+                     {"label": "26 de Enero", "value": 26}],
+                 multi=False,
+                 value=24,
+                 style={'width': "40%"}
+                 ),
+    html.Br(),
+    html.Div(id='output_container', children=[]),
+    dcc.Graph(id='Cliengo', figure={}),
+    
+    html.Table([
+        html.Tr([html.Td(['Daily Values Sum']), html.Td(id='square')]),
+        html.Tr([html.Td(['AVG Hourly Value']), html.Td(id='cube')]),
+    ]),
+    ])
+
+
+@app.callback(
+    [Output(component_id='output_container', component_property='children'),
+     Output(component_id='Cliengo', component_property='figure')],
+    Output('square', 'children'),
+    Output('cube', 'children'),
+    [Input(component_id='slct_day', component_property='value')]
+)
+
+def update_graph(slct_day):
+    print(slct_day)
+    print(type(slct_day))
+
+    container = "A continuación se mostrarán los datos para el día del año número: {}".format(slct_day)
+
+    dff=df.loc[df['Day']==slct_day]
+    fig = px.bar(dff, x="Timestamps", y="Values")
+    
+    for x in range(24):
+        Hour = dff.loc[dff['Hour']==x]
+        Davg.iloc[x,0]=x
+        Davg.iloc[x,1]=Hour.sum()[0]
+    Havg=Davg.mean()[1].round(2)
+    
+    return container, fig, dff.sum()[0], Havg
+
+if __name__ == '__main__':
+    app.run_server(debug=False)
